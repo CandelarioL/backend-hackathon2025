@@ -2,6 +2,12 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.routes.js";
+import aulaRoutes from "./routes/aula.routes.js";
+import actividadRoutes from "./routes/actividad.routes.js";
+import mascotaRoutes from "./routes/mascota.routes.js";
+import progresoRoutes from "./routes/progreso.routes.js";
+import retroRoutes from "./routes/retro.routes.js";
+import matematicasRoutes from "./routes/matematicas.routes.js";
 import { pool } from "./config/db.js";
 
 dotenv.config();
@@ -13,7 +19,16 @@ app.use(express.json());
 // Rutas principales
 app.use("/api/auth", authRoutes);
 
-// Ruta base
+app.use("/api/aulas", aulaRoutes);
+
+app.use("/api/actividades", actividadRoutes);
+app.use("/api/mascotas", mascotaRoutes);
+app.use("/api/progreso", progresoRoutes);
+app.use("/api/retro", retroRoutes);
+
+app.use("/api/matematicas", matematicasRoutes);
+
+// Ruta base de prueba
 app.get("/", (req, res) => {
   res.send("✅ API funcionando correctamente");
 });

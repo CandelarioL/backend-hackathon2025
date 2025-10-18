@@ -2,8 +2,13 @@ import bcrypt from 'bcryptjs';
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 import nodemailer from "nodemailer";
-import { createUser, findUserByEmail, updateUserPassword, updateResetToken } from "../models/user.model.js";
-import { pool } from "../config/db.js"; // ✅ ruta corregida
+import {
+  createUser,
+  findUserByEmail,
+  updateUserPassword,
+  updateResetToken,
+} from "../models/user.model.js";
+import { pool } from "../config/db.js";
 
 dotenv.config();
 
@@ -12,7 +17,7 @@ dotenv.config();
 // ======================================
 export const register = async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, rol } = req.body;
 
     if (!name || !email || !password)
       return res.status(400).json({ msg: "Todos los campos son obligatorios" });
@@ -22,7 +27,12 @@ export const register = async (req, res) => {
       return res.status(400).json({ msg: "El usuario ya existe" });
 
     const hashed = await bcrypt.hash(password, 10);
-    const newUser = await createUser({ name, email, password: hashed });
+    const newUser = await createUser({
+      name,
+      email,
+      password: hashed,
+      rol: rol || "alumno", // 👈 por defecto 'alumno'
+    });
 
     res.status(201).json({
       msg: "Usuario registrado correctamente",
@@ -30,6 +40,7 @@ export const register = async (req, res) => {
         id: newUser.id,
         nombre: newUser.nombre,
         email: newUser.email,
+        rol: newUser.rol,
       },
     });
   } catch (error) {
@@ -42,7 +53,7 @@ export const register = async (req, res) => {
 };
 
 // ======================================
-// 🔹 LOGIN DE USUARIO
+// 🔹 LOGIN DE USUARIO (incluye rol)
 // ======================================
 export const login = async (req, res) => {
   try {
@@ -54,8 +65,11 @@ export const login = async (req, res) => {
     const validPass = await bcrypt.compare(password, user.password);
     if (!validPass) return res.status(401).json({ msg: "Contraseña incorrecta" });
 
+    const rol = user.rol || "alumno"; // 👈 aseguramos rol
+
+    // Crear token con rol incluido
     const token = jwt.sign(
-      { id: user.id, email: user.email },
+      { id: user.id, email: user.email, rol },
       process.env.JWT_SECRET,
       { expiresIn: "2h" }
     );
@@ -67,6 +81,7 @@ export const login = async (req, res) => {
         id: user.id,
         nombre: user.nombre,
         email: user.email,
+        rol,
       },
     });
   } catch (error) {
@@ -79,14 +94,14 @@ export const login = async (req, res) => {
 };
 
 // ======================================
-// 🔹 PERFIL (Endpoint protegido con JWT)
+// 🔹 PERFIL
 // ======================================
 export const perfil = async (req, res) => {
   try {
-    const { id, email } = req.user;
+    const { id, email, rol } = req.user;
     res.json({
       msg: "Acceso autorizado",
-      usuario: { id, email },
+      usuario: { id, email, rol },
     });
   } catch (error) {
     res.status(500).json({
@@ -111,7 +126,6 @@ export const solicitarReset = async (req, res) => {
 
     await updateResetToken(email, token, expira);
 
-    // 📧 Configurar correo
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {

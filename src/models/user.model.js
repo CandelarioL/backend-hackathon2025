@@ -1,16 +1,19 @@
 import { pool } from "../config/db.js";
 
-// 🔹 Buscar usuario por correo
+// 🔹 Buscar usuario por correo (incluye rol)
 export const findUserByEmail = async (email) => {
-  const result = await pool.query("SELECT * FROM usuarios WHERE email = $1", [email]);
+  const result = await pool.query(
+    "SELECT id, nombre, email, password, rol FROM usuarios WHERE email = $1",
+    [email]
+  );
   return result.rows[0];
 };
 
-// 🔹 Crear usuario nuevo
-export const createUser = async ({ name, email, password }) => {
+// 🔹 Crear usuario nuevo (incluye rol)
+export const createUser = async ({ name, email, password, rol }) => {
   const result = await pool.query(
-    "INSERT INTO usuarios (nombre, email, password) VALUES ($1, $2, $3) RETURNING *",
-    [name, email, password]
+    "INSERT INTO usuarios (nombre, email, password, rol) VALUES ($1, $2, $3, $4) RETURNING *",
+    [name, email, password, rol]
   );
   return result.rows[0];
 };
