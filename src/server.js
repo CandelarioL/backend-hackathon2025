@@ -28,6 +28,7 @@ app.use("/api/retro", retroRoutes);
 
 app.use("/api/matematicas", matematicasRoutes);
 
+
 // Ruta base de prueba
 app.get("/", (req, res) => {
   res.send("✅ API funcionando correctamente");
@@ -46,3 +47,7 @@ app.get("/health", async (req, res) => {
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Servidor corriendo en puerto ${PORT}`));
+
+
+
+

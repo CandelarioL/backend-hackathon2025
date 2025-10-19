@@ -1,3 +1,4 @@
+
 import pkg from "pg";
 import dotenv from "dotenv";
 
@@ -12,5 +13,5 @@ export const pool = new Pool({
 });
 
 pool.connect()
-  .then(() => console.log("✅ Conectado correctamente a Supabase PostgreSQL"))
-  .catch((err) => console.error("❌ Error al conectar con Supabase:", err));
+  .then(() => console.log("✅ Conectado a PostgreSQL"))
+  .catch((err) => console.error("❌ Error al conectar con la BD:", err));

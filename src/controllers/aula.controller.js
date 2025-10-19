@@ -41,7 +41,7 @@ export const crearAulaController = async (req, res) => {
     );
 
     res.status(201).json({
-      msg: "Aula creada correctamente ✅",
+      msg: "✅ Aula creada correctamente",
       aula: result.rows[0],
     });
   } catch (error) {
@@ -167,13 +167,23 @@ export const listarAlumnosPorAula = async (req, res) => {
     if (aula.rows.length === 0)
       return res.status(403).json({ msg: "No tienes permiso para ver esta aula." });
 
-    // Obtener alumnos del aula
+    // Obtener alumnos del aula con su progreso promedio
     const alumnosRes = await pool.query(
-      `SELECT u.id, u.nombre, u.email, aa.progreso_general
-       FROM aula_alumnos aa
-       JOIN usuarios u ON u.id = aa.id_alumno
-       WHERE aa.id_aula = $1
-       ORDER BY u.nombre ASC`,
+      `
+      SELECT 
+        u.id, 
+        u.nombre, 
+        u.email, 
+        COALESCE(ROUND(AVG(p.puntaje), 2), 0) AS promedio,
+        COUNT(p.id) FILTER (WHERE p.completado = true) AS completadas
+      FROM aula_alumnos aa
+      JOIN usuarios u ON u.id = aa.id_alumno
+      LEFT JOIN actividades act ON act.id_aula = aa.id_aula
+      LEFT JOIN progreso p ON p.id_usuario = u.id AND p.id_actividad = act.id
+      WHERE aa.id_aula = $1
+      GROUP BY u.id, u.nombre, u.email
+      ORDER BY u.nombre ASC
+      `,
       [idAula]
     );
 
@@ -209,6 +219,11 @@ export const eliminarAula = async (req, res) => {
 
     // Eliminar relaciones primero (FK)
     await pool.query("DELETE FROM aula_alumnos WHERE id_aula = $1", [idAula]);
+    await pool.query("DELETE FROM actividades WHERE id_aula = $1", [idAula]);
+    await pool.query(
+      "DELETE FROM progreso WHERE id_actividad IN (SELECT id FROM actividades WHERE id_aula = $1)",
+      [idAula]
+    );
 
     // Eliminar aula
     await pool.query("DELETE FROM aulas WHERE id = $1", [idAula]);
